@@ -51,19 +51,6 @@
  *      data-check="ip"
  * @cfg [data-check.custom] 自定义验证函数
  *
- *      在表单元素上定义函数名
- *      data-check="custom: functionName"
- *      在window对象上添加新函数
- *      --$control 校验元素dom
- *      function functionName($control){
- *          //CODE
- *          return {
- *              //'验证是否通过的标志'
- *              flag: false,
- *              //'验证失败时显示的信息'
- *              message: '验证失败'
- *          };
- *      }
  *
  */
 ;(function($) {
@@ -71,16 +58,21 @@
 
     //默认配置项
     var defaults = {
-        //正常提示样式
-        tipCls: 'form-tip',
-        //错误提示样式
-        errorTipCls: 'error-tip',
-        //控件错误样式
-        errorControlCls: 'error-control',
-        //下拉列表样式
-        selectCls: 'ui-selectbox',
-        //错误提示html
-        errorTipHtml: '<span class="{{errorTipCls}}">{{tipString}}</span>\n'
+        cls: {
+            //正常提示样式
+            tipCls: 'form-tip',
+            //错误提示样式
+            errorTipCls: 'error-tip',
+            //控件错误样式
+            errorControlCls: 'error-control',
+            //下拉列表样式
+            selectCls: 'ui-selectbox'
+        },
+        template: {
+            //错误提示html
+            errorTipHtml: '<span class="{{errorTipCls}}">{{tipString}}</span>\n'
+        },
+        rules: {}
     };
     var opts = {};
     var checkMethods ={
@@ -420,6 +412,26 @@
                     isPass: true
                 };
             }
+        },
+        'custom': function ($this, ruleName) {
+            var isPass = true;
+
+            if(typeof opts.rules[ruleName] !== 'undefined' && typeof opts.rules[ruleName].func === 'function'){
+                isPass = opts.rules[ruleName].func($this);
+
+                if (isPass === false) {
+                    return {
+                        isPass: false,
+                        msg: opts.rules[ruleName].errorMsg || '验证未通过'
+                    };
+                } else {
+                    return {
+                        isPass: true
+                    };
+                }
+            }else{
+                $.error('未找到自定义规则 ' + ruleName + ' ');
+            }
         }
     };
     var methods = {
@@ -429,6 +441,8 @@
          * @return {[type]}          [description]
          */
         init: function (config) {
+            //配置
+            opts = $.extend(true, {}, defaults, config || {});
             return this.each(function(index, el) {
                 var checking = new Checking(this, config);
             });
@@ -437,10 +451,34 @@
          * 校验
          * @return {[type]} [description]
          */
-        checkAll: function() {
-            var $dom = $me.find('[data-check]');
+        check: function() {
+            var $dom = $(this).find('[data-check]');
+            var isPass = true;
 
-            $dom.trigger('focus').trigger('blur');
+            $dom.each(function(index, el) {
+                var data = $(this).data();
+
+                if(typeof data.isPass === 'undefined'){
+                    if(checkControl.apply(this) === false){
+                        isPass = false;
+                    }
+                }else if(data.isPass === false){
+                    isPass = false;
+                }
+            });
+
+            return isPass;
+        },
+        /**
+         * 重置表单
+         * @return {[type]} [description]
+         */
+        reset: function() {
+            var $dom = $(this).find('[data-check]');
+
+            $dom.each(function(index, el) {
+                resetTip($(this), true);
+            });
         },
         /**
          * 为指定元素设置校验
@@ -526,8 +564,6 @@
 
         //jquery对象
         me.$me = $(dom);
-        //配置
-        me.opts = $.extend(true, {}, defaults, config || {});
         //查找列表
         me.$checkList = me.$me.find('[data-check]');
         //循环 剥离出规则 附加在其上
@@ -558,7 +594,8 @@
             //存储校验规则
             $this.data('checkRules', serializeRules);
             //绑定事件
-            $this.bind('blur', me.opts , checkControl);
+            $this.bind('blur', checkControl);
+            $this.bind('focus', removeControlTip);
         });
     }
 
@@ -569,36 +606,33 @@
         /*jshint validthis:true*/
         var $this = $(this);
         var checkRules = $this.data('checkRules');
-        var opts = event.data;
         var isPass = true;
         var controlMachine = {
-            isPass: 'true',
+            isPass: true,
             msg: [],
             transition: function (isPass, msg) {
                 switch(isPass){
-                    case 'true':
+                    case true:
                         //校验通过
                         this.msg = [];
-                        this.isPass = 'true';
+                        this.isPass = true;
 
-                        //清除错误提示
-                        $this.nextAll('[data-checktip]').remove();
-                        //显示正常提示
-                        $this.nextAll('.' + opts.tipCls).show();
-                        //清除控件错误样式
-                        $this.removeClass(opts.errorControlCls);
+                        //重置提示
+                        resetTip($this, false);
+                        //存储校验状态
+                        $this.data('isPass', true);
 
                         break;
-                    case 'false':
+                    case false:
                         //校验失败
                         var $errorTip = '';
 
-                        this.isPass = 'false';
+                        this.isPass = false;
                         this.msg.push(msg);
 
                         //生成提示
-                        $errorTip = $(tpl(opts.errorTipHtml, {
-                            errorTipCls: opts.errorTipCls,
+                        $errorTip = $(tpl(opts.template.errorTipHtml, {
+                            errorTipCls: opts.cls.errorTipCls,
                             tipString: this.msg.join(' ')
                         }));
 
@@ -607,37 +641,80 @@
                         //清除之前的提示
                         $this.nextAll('[data-checktip]').remove();
                         //隐藏正常提示
-                        $this.nextAll('.' + opts.tipCls).hide();
+                        $this.nextAll('.' + opts.cls.tipCls).hide();
 
                         //显示提示
-                        $this.addClass(opts.errorControlCls);
+                        $this.addClass(opts.cls.errorControlCls);
                         $this.parent().append($errorTip);
+                        //存储校验状态
+                        $this.data('isPass', false);
 
                         break;
                 }
             }
         };
 
+        //忽略校验
+        if($this.data('ignore') === 'true' || $this.is(':hidden:not([type=hidden])') || $this.is('[disabled=disabled]')){
+            controlMachine.transition(true);
+            return controlMachine.isPass;
+        }
+
         for (var i = 0, len = checkRules.length; i < len; i++) {
             var rules = checkRules[i];
 
             if(checkValidate[rules.name]){
-                var result = checkValidate[rules.name]($this.val(), rules.value);
+                var result = {};
+
+                if(rules.name === 'custom'){
+                    result = checkValidate[rules.name]($this, rules.value);
+                }else{
+                    result = checkValidate[rules.name]($this.val(), rules.value);
+                }
 
                 if(result.isPass === false){
-                    controlMachine.transition('false', result.msg);
-                    isPass = false;
+                    controlMachine.transition(false, result.msg);
                 }
             }else{
                 $.error('校验规则 ' + checkRules[i].name + ' 不存在');
             }
         }
 
-        if(isPass === true){
-            controlMachine.transition('true');
+        if(controlMachine.isPass === true){
+            controlMachine.transition(true);
+        }
+
+        return controlMachine.isPass;
+    }
+
+    /**
+     * 去除提示
+     * @return {[type]} [description]
+     */
+    function removeControlTip() {
+        /*jshint validthis:true*/
+        resetTip($(this), false);
+    }
+
+    /**
+     * 重置提示
+     */
+    function resetTip($this, isRemoveData){
+        //清除错误提示
+        $this.nextAll('[data-checktip]').remove();
+        //显示正常提示
+        $this.nextAll('.' + opts.cls.tipCls).show();
+        //清除控件错误样式
+        $this.removeClass(opts.cls.errorControlCls);
+        //清除绑定的数据
+        if(isRemoveData === true){
+            $this.removeData('isPass');
         }
     }
 
+    /**
+     * 模板
+     */
     function tpl(template, data) {
         return template.replace(/{{(\w*?)}}/g, function ($1, $2) {
             if(data[$2]){
