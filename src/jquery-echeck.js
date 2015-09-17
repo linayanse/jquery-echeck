@@ -458,11 +458,7 @@
             $dom.each(function(index, el) {
                 var data = $(this).data();
 
-                if(typeof data.isPass === 'undefined'){
-                    if(checkControl.apply(this) === false){
-                        isPass = false;
-                    }
-                }else if(data.isPass === false){
+                if(checkControl.apply(this) === false){
                     isPass = false;
                 }
             });
