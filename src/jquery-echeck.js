@@ -34,6 +34,12 @@
  * @cfg [data-check.fit] 校验指定name值的表单元素的值是否与校验元素相同，例如确认密码
  *
  *      data-check="fit: account"
+ * @cfg [data-check.string-scope] 字符区间限制 不区分汉字和英文
+ *
+ *      data-check="string-scope: 10-50"
+* @cfg [data-check.char-scope] 字符区间限制 区分汉字和英文
+ *
+ *      data-check="char-scope: 10-50"
  * @cfg [data-check.scope] 数字区间限制
  *
  *      data-check="scope: 1-10"
@@ -342,6 +348,41 @@
                     msg: '汉字不能大于' + limit / 2 + '个, 英文不能大于' + limit + '个'
                 };
             }else{
+                return {
+                    isPass: true
+                };
+            }
+        },
+        'string-scope': function (val, limit) {
+            var scope = limit.split('-');
+            var min = Math.min(scope[0], scope[1]);
+            var max = Math.max(scope[0], scope[1]);
+            var len = val.length;
+
+            if (len < min || len > max) {
+                return {
+                    isPass: false,
+                    msg: '请输入范围在' + min + ' - ' + max + ' 长度的字符'
+                };
+            } else {
+                return {
+                    isPass: true
+                };
+            }
+        },
+        'char-scope': function (val, limit) {
+            var scope = limit.split('-');
+            var min = Math.min(scope[0], scope[1]);
+            var max = Math.max(scope[0], scope[1]);
+
+            val = checkMethods.countCharacters(val);
+
+            if (val < min || val > max) {
+                return {
+                    isPass: false,
+                    msg: '请输入范围在' + min + ' - ' + max + ' 长度的字符'
+                };
+            } else {
                 return {
                     isPass: true
                 };

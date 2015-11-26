@@ -1,0 +1,20 @@
+{
+  "name": "unit-test",
+  "version": "0.0.0",
+  "dependencies": {},
+  "devDependencies": {
+    "chai": "^3.4.0",
+    "jasmine-core": "^2.3.4",
+    "karma": "^0.13.14",
+    "karma-chai": "^0.1.0",
+    "karma-chai-jquery": "^0.1.4",
+    "karma-chrome-launcher": "^0.2.1",
+    "karma-jasmine": "^0.3.6",
+    "karma-jquery": "^0.1.0",
+    "karma-mocha": "^0.2.0",
+    "karma-phantomjs-launcher": "^0.2.1",
+    "karma-requirejs": "^0.2.2",
+    "phantomjs": "^1.9.18",
+    "requirejs": "^2.1.20"
+  }
+}

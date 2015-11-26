@@ -1,5 +1,5 @@
 // Karma configuration
-// Generated on Tue Jul 14 2015 11:34:07 GMT+0800 (中国标准时间)
+// Generated on Tue Nov 03 2015 10:55:46 GMT+0800 (中国标准时间)
 
 module.exports = function(config) {
   config.set({
@@ -10,15 +10,13 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha', 'requirejs'],
+    frameworks: ['mocha', 'chai'],
 
 
     // list of files / patterns to load in the browser
     files: [
-      'test-main.js',
-      {pattern: 'lib/**/*.js', included: false},
-      {pattern: 'src/*.js', included: false},
-      {pattern: 'test/**/*Spec.js', included: false}
+      'src/t.js',
+      'test/*Spec.js'
     ],
 
 
@@ -30,18 +28,13 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-        'src/**/*.js': 'coverage'
     },
 
-    coverageReporter: {
-        type: 'html',
-        dir: 'coverage/'
-    },
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['progress', 'coverage'],
+    reporters: ['progress'],
 
 
     // web server port
@@ -63,11 +56,15 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    browsers: ['PhantomJS'],
 
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: false
-  });
-};
+    singleRun: false,
+
+    // Concurrency level
+    // how many browser should be started simultanous
+    concurrency: Infinity
+  })
+}
